@@ -47,7 +47,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Still stubbed / TODOs remaining
 - `src/lookup/linux-proc.ts` — `/proc` fallback for Alpine/no-lsof Linux
 - `ProcessInfo.command` full cmdline — lsof `-F c` gives name only; `--verbose` needs `ps`; Windows needs `wmic` (`TODO(v0.2)`)
-- `--check` JSON status for held ports — uses `"error"` as placeholder; CLI.md has no `"running"` status (`TODO(clarify)`)
 - `KillResult.signal` type — non-SIGKILL initial signals reported as `'SIGTERM'` (`TODO(v0.2)`)
 - `ProcessInfo.startedAt` — not populated; UPTIME column shows `—`
 

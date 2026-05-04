@@ -27,7 +27,7 @@ const program = new Command();
 program
   .name('deadport')
   .description('Kill the process holding a port. One command, zero Stack Overflow tabs.')
-  .version('0.1.0', '-V, --version')
+  .version('0.2.0-beta.1', '-V, --version')
   .argument(
     '<port...>',
     'Port(s) to target: single (3000), colon (:3000), range (3000-3010), comma list (3000,8080)',

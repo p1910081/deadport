@@ -7,7 +7,11 @@
     "deadport": "dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "BETA.md"
   ],
   "scripts": {
     "build": "tsup",
@@ -43,11 +47,14 @@
     "kill",
     "process",
     "lsof",
+    "cli",
+    "developer-tools",
     "devtools"
   ],
   "license": "MIT",
+  "homepage": "https://github.com/YOUR_USERNAME/deadport#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/deadport"
+    "url": "git+https://github.com/YOUR_USERNAME/deadport.git"
   }
 }
