@@ -1,0 +1,53 @@
+{
+  "name": "deadport",
+  "version": "0.2.0-beta.1",
+  "description": "Kill the process holding a port. One command, zero Stack Overflow tabs.",
+  "type": "module",
+  "bin": {
+    "deadport": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:e2e": "vitest run test/e2e.test.ts",
+    "lint": "eslint src test --ext .ts && prettier --check src test",
+    "fix": "eslint src test --ext .ts --fix && prettier --write src test",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.0.0",
+    "commander": "^12.0.0",
+    "picocolors": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "eslint": "^8.57.0",
+    "execa": "^9.6.1",
+    "prettier": "^3.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "port",
+    "kill",
+    "process",
+    "lsof",
+    "devtools"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/deadport"
+  }
+}

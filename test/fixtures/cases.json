@@ -1,0 +1,68 @@
+{
+  "lsof": [
+    {
+      "name": "single process on port 3000",
+      "fixture": "lsof/single.txt",
+      "expected": [{ "pid": 48291, "name": "node", "user": "alex", "command": "node" }]
+    },
+    {
+      "name": "multiple processes on different ports",
+      "fixture": "lsof/multi-pid.txt",
+      "expected": [
+        { "pid": 48291, "name": "node", "user": "alex", "command": "node" },
+        { "pid": 12044, "name": "python3", "user": "alex", "command": "python3" },
+        { "pid": 99001, "name": "ruby", "user": "bob", "command": "ruby" }
+      ]
+    },
+    {
+      "name": "process bound on both IPv4 and IPv6 (deduplication)",
+      "fixture": "lsof/ipv4-and-ipv6.txt",
+      "expected": [{ "pid": 48291, "name": "node", "user": "alex", "command": "node" }]
+    },
+    {
+      "name": "empty output yields no processes",
+      "fixture": "lsof/empty.txt",
+      "expected": []
+    }
+  ],
+  "netstat": [
+    {
+      "name": "basic Windows netstat with LISTENING rows",
+      "fixture": "netstat/windows-basic.txt",
+      "expected": [
+        { "port": 3000, "pid": 48291 },
+        { "port": 8080, "pid": 12044 },
+        { "port": 3000, "pid": 48291 },
+        { "port": 5432, "pid": 9901 }
+      ]
+    },
+    {
+      "name": "empty Windows netstat yields no entries",
+      "fixture": "netstat/windows-empty.txt",
+      "expected": []
+    },
+    {
+      "name": "mixed LISTENING/ESTABLISHED/TIME_WAIT — only LISTENING rows returned",
+      "fixture": "netstat/windows-multi-state.txt",
+      "expected": [
+        { "port": 3000, "pid": 48291 },
+        { "port": 8080, "pid": 12044 },
+        { "port": 3000, "pid": 48291 },
+        { "port": 5432, "pid": 9901 },
+        { "port": 135, "pid": 1024 }
+      ]
+    }
+  ],
+  "tasklist": [
+    {
+      "name": "single process from tasklist CSV",
+      "fixture": "tasklist/single.csv",
+      "expected": [{ "pid": 48291, "name": "node.exe", "user": "DESKTOP-USER\\alex" }]
+    },
+    {
+      "name": "INFO: No tasks response yields empty result (race condition)",
+      "fixture": "tasklist/no-match.txt",
+      "expected": []
+    }
+  ]
+}
