@@ -104,6 +104,11 @@ Output schema:
       "status": "free"
     },
     {
+      "port": 9000,
+      "status": "running",
+      "process": { "pid": 55100, "name": "python3", "user": "alex", "command": "python3 app.py" }
+    },
+    {
       "port": 22,
       "status": "permission-denied",
       "process": { "pid": 1234, "name": "sshd", "user": "root", "command": "/usr/sbin/sshd -D" }
@@ -112,7 +117,9 @@ Output schema:
 }
 ```
 
-`status` is one of: `killed`, `free`, `permission-denied`, `cancelled`, `error`.
+`status` is one of: `killed`, `free`, `running`, `permission-denied`, `cancelled`, `error`.
+
+`running` is emitted only by `--check` mode (the port is held but we did not kill).
 
 ### `-v, --verbose`
 
@@ -129,6 +136,23 @@ Show help and exit.
 ### `-V, --version`
 
 Show version and exit.
+
+---
+
+## Non-interactive mode
+
+When stdin or stdout is not a TTY (piped, redirected, CI environment) and
+none of `--force`, `--quiet`, or `--json` are passed, deadport refuses to
+act and exits with code 4. This prevents silent or hung kills in scripts
+and CI pipelines. Use `--force` to opt into non-interactive killing.
+
+```bash
+# In a script or CI pipeline, always pass --force:
+deadport 3000 --force
+
+# Or use --json (also suppresses prompts):
+deadport 3000 --json | jq '.results[0].status'
+```
 
 ---
 

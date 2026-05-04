@@ -120,13 +120,39 @@ describe.skipIf(!runE2E)('E2E — kill flow', () => {
     expect(result.exitCode).toBe(1);
   });
 
+  it('--check on a free port exits 0', async () => {
+    // Grab an ephemeral port, kill the server, then verify --check still exits 0
+    const { port, proc } = await startServer();
+    proc.kill();
+    await waitFree(port, 2000);
+
+    const result = await cli([String(port), '--check']);
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('--check --json on a held port emits status "running"', async () => {
+    const { port, proc } = await startServer();
+    try {
+      const result = await cli([String(port), '--check', '--json']);
+      expect(result.exitCode).toBe(0);
+
+      const parsed = JSON.parse(normalize(result.stdout)) as {
+        results: Array<{ port: number; status: string }>;
+      };
+      expect(parsed.results[0]?.port).toBe(port);
+      expect(parsed.results[0]?.status).toBe('running');
+    } finally {
+      proc.kill();
+    }
+  });
+
   it('exits 4 when no TTY and no --force flag', async () => {
     const { port, proc } = await startServer();
     try {
       // stdin is piped (isTTY === undefined) and no --force → must exit 4
       const result = await cli([String(port)]);
       expect(result.exitCode).toBe(4);
-      expect(normalize(result.stderr)).toMatch(/TTY|force/i);
+      expect(normalize(result.stderr)).toMatch(/TTY/i);
     } finally {
       proc.kill();
     }

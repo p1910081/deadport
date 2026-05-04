@@ -69,9 +69,7 @@ async function confirmKill(count: number): Promise<boolean> {
  *   kill each process → output results → return highest exit code.
  *
  * No-TTY guard: if stdin is not a TTY and --force/--quiet/--json are not set,
- * refuse and exit 4 with a clear message.
- * TODO(clarify): CLI.md is silent on no-TTY behavior; this is a conservative
- * interpretation that matches the intent of "--force for scripts."
+ * refuse and exit 4 with a clear message. Per CLI.md "Non-interactive mode".
  */
 export async function runKill(ports: number[], opts: KillCommandOptions): Promise<number> {
   // -- 1. Lookup --------------------------------------------------------------
@@ -114,7 +112,8 @@ export async function runKill(ports: number[], opts: KillCommandOptions): Promis
   const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
   if (!opts.force && !opts.quiet && !opts.json && !isInteractive) {
     console.error(
-      'deadport: No TTY detected. Use --force (-f), --quiet (-q), or --json (-j) to run non-interactively.',
+      '✗ No TTY detected. Use --force to kill non-interactively.\n' +
+        '  See: https://github.com/YOUR_USERNAME/deadport#non-interactive-mode',
     );
     return 4;
   }

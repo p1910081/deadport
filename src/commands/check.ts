@@ -11,11 +11,10 @@ export interface CheckOptions {
  * --check flow: look up port holders, display info, do not kill anything.
  * Always exits 0 per CLI.md spec.
  *
- * TODO(clarify): the CLI.md JSON schema defines status values for kill results
- * (killed, free, permission-denied, cancelled, error). There is no "running" status.
- * For --check with a held port we emit the process object with status "error" as a
- * placeholder. A future spec clarification should add a "held" status or document
- * that --check reuses the same schema and "free" means nothing is found.
+ * JSON status values per CLI.md:
+ *   - "free"    → port has no listening process
+ *   - "running" → port is held, but we did not kill (check-mode only)
+ *   - "error"   → lookup failed
  */
 export async function runCheck(ports: number[], opts: CheckOptions): Promise<void> {
   const result = await findPortHolders(ports);
@@ -35,9 +34,8 @@ export async function runCheck(ports: number[], opts: CheckOptions): Promise<voi
   if (opts.json) {
     const jsonResults: JsonPortResult[] = result.holders.map((h) => {
       if (h.processes.length === 0) return freeResult(h.port);
-      // TODO(clarify): no "running" status in CLI.md schema — see function comment
       const proc = h.processes[0];
-      const r: JsonPortResult = { port: h.port, status: 'error' };
+      const r: JsonPortResult = { port: h.port, status: 'running' };
       if (proc)
         r.process = { pid: proc.pid, name: proc.name, user: proc.user, command: proc.command };
       return r;

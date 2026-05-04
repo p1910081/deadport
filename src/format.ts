@@ -14,7 +14,7 @@ export interface JsonProcessInfo {
 
 export interface JsonPortResult {
   port: number;
-  status: 'killed' | 'free' | 'permission-denied' | 'cancelled' | 'error';
+  status: 'killed' | 'free' | 'running' | 'permission-denied' | 'cancelled' | 'error';
   process?: JsonProcessInfo;
   signal?: string;
   durationMs?: number;
