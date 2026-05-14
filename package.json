@@ -52,9 +52,12 @@
     "devtools"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/YOUR_USERNAME/deadport#readme",
+  "homepage": "https://github.com/p1910081/deadport#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_USERNAME/deadport.git"
+    "url": "git+https://github.com/p1910081/deadport.git"
+  },
+  "bugs": {
+    "url": "https://github.com/p1910081/deadport/issues"
   }
 }
