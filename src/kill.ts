@@ -6,7 +6,7 @@ const execFileAsync = promisify(execFile);
 
 export interface KillOptions {
   signal: Signal;
-  /** Grace period in milliseconds before escalating to SIGKILL. */
+  /** Grace period in milliseconds before escalating to forced kill. */
   graceMs: number;
 }
 
@@ -16,8 +16,7 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Check whether a process is still alive.
- * - Returns true  if alive (signal 0 succeeds, or EPERM — alive but unpermissioned)
- * - Returns false if dead (ESRCH)
+ * Works identically on all platforms — process.kill(pid, 0) throws ESRCH when dead.
  */
 function isAlive(pid: number): boolean {
   try {
@@ -25,7 +24,7 @@ function isAlive(pid: number): boolean {
     return true;
   } catch (err: unknown) {
     const code = (err as NodeJS.ErrnoException).code;
-    return code === 'EPERM'; // EPERM = alive, cannot signal; ESRCH = dead
+    return code === 'EPERM'; // EPERM = alive but unpermissioned; ESRCH = dead
   }
 }
 
@@ -38,29 +37,43 @@ async function waitForDeath(pid: number, maxMs: number): Promise<boolean> {
   return !isAlive(pid);
 }
 
-async function killWindowsSigkill(pid: number): Promise<void> {
-  // TODO(v0.2): revisit when windows.ts lookup is wired; for now force-terminate.
-  await execFileAsync('taskkill', ['/PID', String(pid), '/F']);
+/**
+ * Platform-unified forced (immediate) kill.
+ * Windows: taskkill /F — terminates the process unconditionally.
+ * Unix:    SIGKILL via process.kill.
+ */
+async function forcedKill(pid: number): Promise<void> {
+  if (process.platform === 'win32') {
+    await execFileAsync('taskkill', ['/PID', String(pid), '/F']);
+  } else {
+    process.kill(pid, 'SIGKILL');
+  }
 }
 
 /**
- * Send a signal to a process and wait for it to die, escalating to SIGKILL after
- * the grace period if needed.
+ * Send a signal to a process and wait for it to die, escalating to a forced kill
+ * after the grace period if needed.
  *
- * Signal mapping on Windows (Node translates most signals to TerminateProcess):
- * - SIGKILL → taskkill /F (immediate)
- * - everything else → process.kill (graceful-ish; no POSIX semantics)
+ * Signal semantics per platform:
+ *   SIGKILL (any platform)    → forcedKill immediately (taskkill /F on Windows)
+ *   non-SIGKILL on Windows    → process.kill(pid) with no signal arg, which sends
+ *                               WM_CLOSE — lets the process handle a clean shutdown
+ *   non-SIGKILL on Unix       → process.kill(pid, signal) — standard POSIX
  *
- * TODO(v0.2): Windows: properly use taskkill for SIGTERM-style with a grace period.
+ * KillResult.signal reflects what actually killed the process:
+ *   'SIGTERM' → process exited during the grace period (graceful)
+ *   'SIGKILL' → we had to force it (or user explicitly requested SIGKILL)
  */
 export async function killProcess(pid: number, opts: KillOptions): Promise<KillResult> {
   const start = Date.now();
-  const isWindows = process.platform === 'win32';
 
   // -- 1. Send initial signal ------------------------------------------------
   try {
-    if (isWindows && opts.signal === 'SIGKILL') {
-      await killWindowsSigkill(pid);
+    if (opts.signal === 'SIGKILL') {
+      await forcedKill(pid);
+    } else if (process.platform === 'win32') {
+      // No signal arg → Node sends WM_CLOSE on Windows, allowing clean shutdown.
+      process.kill(pid);
     } else {
       process.kill(pid, opts.signal);
     }
@@ -71,30 +84,27 @@ export async function killProcess(pid: number, opts: KillOptions): Promise<KillR
     throw err;
   }
 
-  // -- 2. If SIGKILL (or Windows where signals are immediate), just poll -----
-  if (opts.signal === 'SIGKILL' || isWindows) {
-    const maxWait = isWindows ? Math.min(opts.graceMs, 2000) : 500;
-    const died = await waitForDeath(pid, maxWait);
+  // -- 2. SIGKILL path: no grace period, just poll until dead ----------------
+  if (opts.signal === 'SIGKILL') {
+    const died = await waitForDeath(pid, 500);
     if (!died) return { ok: false, pid, reason: 'timeout' };
     return { ok: true, pid, signal: 'SIGKILL', durationMs: Date.now() - start };
   }
 
-  // -- 3. Wait for grace period -----------------------------------------------
+  // -- 3. Graceful path: wait for the process to exit on its own -------------
   const diedInGrace = await waitForDeath(pid, opts.graceMs);
   if (diedInGrace) {
-    // TODO(v0.2): KillResult.signal should include all Signal values, not just
-    // 'SIGTERM' | 'SIGKILL'. For now, report the initial signal as 'SIGTERM'
-    // since non-SIGKILL signals share the same "graceful" semantics.
     return { ok: true, pid, signal: 'SIGTERM', durationMs: Date.now() - start };
   }
 
-  // -- 4. Escalate to SIGKILL -------------------------------------------------
+  // -- 4. Escalate: grace expired, force kill --------------------------------
   try {
-    process.kill(pid, 'SIGKILL');
+    await forcedKill(pid);
   } catch (err: unknown) {
     const code = (err as NodeJS.ErrnoException).code;
-    if (code === 'ESRCH') {
-      // Died between last poll and SIGKILL attempt — still a success.
+    // Unix: SIGKILL throws ESRCH if the process died between last poll and escalation.
+    // Windows: taskkill exits non-zero if PID no longer exists — check liveness instead.
+    if (code === 'ESRCH' || !isAlive(pid)) {
       return { ok: true, pid, signal: 'SIGTERM', durationMs: Date.now() - start };
     }
     if (code === 'EPERM') return { ok: false, pid, reason: 'permission' };
