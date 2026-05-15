@@ -51,7 +51,7 @@ deadport 3000 8080 --check --json
 
 ## Reporting issues
 
-Please open an issue at https://github.com/YOUR_USERNAME/deadport with:
+Please open an issue at https://github.com/p1910081/deadport with:
 
 1. OS + Node version (`node --version`)
 2. The exact command you ran

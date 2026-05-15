@@ -113,7 +113,7 @@ export async function runKill(ports: number[], opts: KillCommandOptions): Promis
   if (!opts.force && !opts.quiet && !opts.json && !isInteractive) {
     console.error(
       '✗ No TTY detected. Use --force to kill non-interactively.\n' +
-        '  See: https://github.com/YOUR_USERNAME/deadport#non-interactive-mode',
+        '  See: https://github.com/p1910081/deadport#non-interactive-mode',
     );
     return 4;
   }
